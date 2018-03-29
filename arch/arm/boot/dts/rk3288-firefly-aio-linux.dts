@@ -1,0 +1,226 @@
+/*
+ * Copyright (c) 2014, 2015 FUKAUMI Naoki <naobsd@gmail.com>
+ *
+ * This file is dual-licensed: you can use it either under the terms
+ * of the GPL or the X11 license, at your option. Note that this dual
+ * licensing only applies to this file, and not this project as a
+ * whole.
+ *
+ *  a) This file is free software; you can redistribute it and/or
+ *     modify it under the terms of the GNU General Public License as
+ *     published by the Free Software Foundation; either version 2 of the
+ *     License, or (at your option) any later version.
+ *
+ *     This file is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ * Or, alternatively,
+ *
+ *  b) Permission is hereby granted, free of charge, to any person
+ *     obtaining a copy of this software and associated documentation
+ *     files (the "Software"), to deal in the Software without
+ *     restriction, including without limitation the rights to use,
+ *     copy, modify, merge, publish, distribute, sublicense, and/or
+ *     sell copies of the Software, and to permit persons to whom the
+ *     Software is furnished to do so, subject to the following
+ *     conditions:
+ *
+ *     The above copyright notice and this permission notice shall be
+ *     included in all copies or substantial portions of the Software.
+ *
+ *     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ *     OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/dts-v1/;
+#include "rk3288-firefly.dtsi"
+
+/ {
+	model = "AIO Board BOX (Linux)";
+	compatible = "firefly,aio-3288j", "rockchip,rk3288";
+
+	test-power {
+		status = "okay";
+	};
+};
+
+&vcc_5v {
+	enable-active-high;
+	gpio = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwr5v_en>;
+};
+
+&ir {
+	gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
+};
+
+&pinctrl {
+	act8846 {
+		pmic_vsel: pmic-vsel {
+			rockchip,pins = <7 14 RK_FUNC_GPIO &pcfg_output_low>;
+		};
+
+		pwr_hold: pwr-hold {
+			rockchip,pins = <0 6 RK_FUNC_GPIO &pcfg_output_high>;
+		};
+	};
+
+	ir {
+		ir_int: ir-int {
+			rockchip,pins = <7 0 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	pwr5v_en: pwr5v-en {
+		rockchip,pins = <0 13 RK_FUNC_GPIO &pcfg_output_high>;
+	};
+
+	es8323 {
+		es8323_earcon: es8323-earcon {
+			rockchip,pins = <0 10 RK_FUNC_GPIO &pcfg_output_high>;
+		};
+
+		es8323_spkcon:es8323-spkcon {
+			rockchip,pins = <7 6 RK_FUNC_GPIO &pcfg_output_low>;
+		};
+	};
+};
+
+&usb_otg {
+	dr_mode = "host";
+	status = "okay";
+};
+
+&es8323 {
+	hp-det-gpio = <&gpio7 15 GPIO_ACTIVE_HIGH>;
+	line-det-gpio = <&gpio2 15 GPIO_ACTIVE_LOW>;
+	ear-con-gpio = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+	spk-con-gpio = <&gpio7 6 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&es8323_earcon &es8323_spkcon>;
+};
+
+&spi0 {
+	status = "okay";
+	max-freq = <48000000>;
+
+	spidev@00 {
+        status = "disabled";
+        compatible = "linux,spidev";
+        reg = <0x00>;
+        spi-max-frequency = <48000000>;
+    };
+
+	spi_wk2xxx: spi_wk2xxx@00{
+		status = "okay";
+		compatible = "firefly,spi-wk2xxx";
+		reg = <0x00>;
+		spi-max-frequency = <10000000>;
+		power-gpio = <&gpio3 14 GPIO_ACTIVE_HIGH>;
+        reset-gpio = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+        irq-gpio = <&gpio0 7 IRQ_TYPE_EDGE_FALLING>;
+        cs-gpio = <&gpio5 13 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&act8846 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pmic_vsel>, <&pwr_hold>;
+	system-power-controller;
+
+	regulators {
+		vcc_ddr: REG1 {
+			regulator-name = "vcc_ddr";
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			regulator-always-on;
+		};
+
+		vcc_io: REG2 {
+			regulator-name = "vcc_io";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+		};
+
+		vdd_log: REG3 {
+			regulator-name = "vdd_log";
+			regulator-min-microvolt = <700000>;
+			regulator-max-microvolt = <1500000>;
+			regulator-always-on;
+		};
+
+		vcc_20: REG4 {
+			regulator-name = "vcc_20";
+			regulator-min-microvolt = <2000000>;
+			regulator-max-microvolt = <2000000>;
+			regulator-always-on;
+		};
+
+		vccio_sd: REG5 {
+			regulator-name = "vccio_sd";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+		};
+
+		vdd10_lcd: REG6 {
+			regulator-name = "vdd10_lcd";
+			regulator-min-microvolt = <1050000>;
+			regulator-max-microvolt = <1050000>;
+			regulator-always-on;
+		};
+
+		vcca_18: REG7 {
+			regulator-name = "vcca_18";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+		};
+
+		vcca_33: REG8 {
+			regulator-name = "vcca_33";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+		};
+
+		vcc_lan: REG9 {
+			regulator-name = "vcc_lan";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+
+		vdd_10: REG10 {
+			regulator-name = "vdd_10";
+			regulator-min-microvolt = <1100000>;
+			regulator-max-microvolt = <1100000>;
+			regulator-always-on;
+		};
+
+		vccio_wl: vcc_18: REG11 {
+			regulator-name = "vcc_18";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-always-on;
+		};
+
+		vcc18_lcd: REG12 {
+			regulator-name = "vcc18_lcd";
+			regulator-min-microvolt = <1850000>;
+			regulator-max-microvolt = <1850000>;
+			regulator-always-on;
+		};
+	};
+};
